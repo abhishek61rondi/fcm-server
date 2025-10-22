@@ -1,32 +1,11 @@
-const express = require("express");
 const admin = require("firebase-admin");
-const bodyParser = require("body-parser");
+const fs = require("fs");
 
-const app = express();
-app.use(bodyParser.json());
-
-const serviceAccount = require("./service-account.json");
+// Read the JSON from Render secret path
+const serviceAccount = JSON.parse(
+  fs.readFileSync("/run/secrets/SERVICE_ACCOUNT_JSON", "utf8")
+);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
-
-app.post("/send", async (req, res) => {
-  const { token, title, body } = req.body;
-
-  if (!token) return res.status(400).json({ error: "No token provided" });
-
-  const message = {
-    token,
-    notification: { title, body }
-  };
-
-  try {
-    const response = await admin.messaging().send(message);
-    res.json({ success: true, response });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-app.listen(3000, () => console.log("✅ Server running on port 3000"));
